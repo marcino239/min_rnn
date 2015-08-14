@@ -51,10 +51,10 @@ def rnn( inputs, targets, hprev ):
 		xs[i][inputs[i]] = 1.
 		
 		hraw = np.dot( Wxh, xs[i] ) + np.dot( Whh, hs[i-1] ) + bh
-		hs[i] = np.tanh( hraw[i] )
+		hs[i] = np.tanh( hraw )
 		ys[i] = np.dot( Why, hs[i] ) + by
 		
-#		# clip ys to avoid overflows.  tanh does clipping via it's natural range
+#		# clip ys to avoid overflows
 #		np.clip( ys[i], -100., 100., out=ys[i] )
 		
 		# normalise probabilities
@@ -137,7 +137,7 @@ def sample( h, seed_ix, n ):
   x[ seed_ix ] = 1
   ixes = []
   for t in range( n ):
-    h = np.maximum( np.dot( Wxh, x ) + np.dot( Whh, h ) + bh, 0. )
+    h = np.tanh( np.dot( Wxh, x ) + np.dot( Whh, h ) + bh )
     y = np.dot( Why, h ) + by
     p = np.exp( y ) / np.sum( np.exp( y ) )
     ix = np.random.choice( range( dict_size ), p=p.ravel() )
@@ -148,7 +148,7 @@ def sample( h, seed_ix, n ):
   return ixes
 
 # run gradient validation
-if True:
+if False:
 	p = 0
 	inputs = [ char_to_x[ c ] for c in data[ p:p+seq_len ] ]
 	targets = [ char_to_x[ c ] for c in data[ p + 1:p+seq_len + 1 ] ]
