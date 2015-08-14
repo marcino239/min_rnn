@@ -50,12 +50,12 @@ def rnn( inputs, targets, hprev ):
 		xs[i] = np.zeros( ( dict_size, 1 ) )
 		xs[i][inputs[i]] = 1.
 		
-		hraw[i] = np.dot( Wxh, xs[i] ) + np.dot( Whh, hs[i-1] ) + bh
-		hs[i] = np.maximum( hraw[i], 0. )
+		hraw = np.dot( Wxh, xs[i] ) + np.dot( Whh, hs[i-1] ) + bh
+		hs[i] = np.tanh( hraw[i] )
 		ys[i] = np.dot( Why, hs[i] ) + by
 		
-		# clip ys to avoid overflows.  tanh does clipping via it's natural range
-		np.clip( ys[i], -100., 100., out=ys[i] )
+#		# clip ys to avoid overflows.  tanh does clipping via it's natural range
+#		np.clip( ys[i], -100., 100., out=ys[i] )
 		
 		# normalise probabilities
 		ps[i] = np.exp( ys[i] ) / np.sum( np.exp( ys[i] ) )
@@ -77,10 +77,8 @@ def rnn( inputs, targets, hprev ):
         dby += dy
         
         dh = np.dot( Why.T, dy) + dhnext # backprop into h
-        dhtemp = np.zeros_like( dhnext )
-        dhtemp[ hraw[i] > 0. ] = 1.
-        dhraw = dhtemp * dh
-        
+	dhraw = (1. - hs[i] * hs[i]) * dh
+
         dbh += dhraw
         dWxh += np.dot( dhraw, xs[i].T )
         dWhh += np.dot( dhraw, hs[i-1].T )
@@ -150,7 +148,7 @@ def sample( h, seed_ix, n ):
   return ixes
 
 # run gradient validation
-if False:
+if True:
 	p = 0
 	inputs = [ char_to_x[ c ] for c in data[ p:p+seq_len ] ]
 	targets = [ char_to_x[ c ] for c in data[ p + 1:p+seq_len + 1 ] ]
@@ -161,6 +159,11 @@ if False:
 	print( data[ p + 1:p+seq_len + 1 ], targets )
 
 	gradCheck( inputs, targets, hprev )
+
+	import sys
+	sys.exit( 0 )
+
+
 
 # main program
 n, p = 0, 0
